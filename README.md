@@ -18,7 +18,7 @@ optional flag -a before other arguments to use distance-based pathfinding. Examp
        go run . network.map waterloo st_pancras 4 | wc -l  
 
 ..........................................................................................
-
+..........................................................................................
                         ##How It Works##
 The program uses two main algorithms to plan train routes:
 
