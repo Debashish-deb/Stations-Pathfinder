@@ -19,6 +19,7 @@ optional flag -a before other arguments to use distance-based pathfinding. Examp
 
 ..........................................................................................
 ..........................................................................................
+                        
                         ##How It Works##
 The program uses two main algorithms to plan train routes:
 
