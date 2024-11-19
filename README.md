@@ -26,17 +26,17 @@ To manage the trains, the program assigns a path to each one, from the most effi
 Assigning Paths: Routes are calculated for all trains.
 Tracking Movement: During each turn, the program keeps track of which station each train is at and prints the results, so you can see how they move through the map.
 
-##Visual representation of the Map:##
+                ##Visual representation of the Map:##
 
-0  1 2 3 4 5 6 7
-1      X <- waterloo
-2     / \
-3    /   \
-4   /     \
-5  X <- euston
-6   \       \
-7    \       X <- victoria
-8     \     /
-9      \   /
-10      \ /
-11       X <- st_pancras
+    0  1 2 3 4 5 6 7
+    1      X <- waterloo
+    2     / \
+    3    /   \
+    4   /     \
+    5  X <- euston
+    6   \       \
+    7    \       X <- victoria
+    8     \     /
+    9      \   /
+    10      \ /
+    11       X <- st_pancras
