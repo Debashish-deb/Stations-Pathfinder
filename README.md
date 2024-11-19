@@ -8,9 +8,13 @@ The program requires four command-line arguments:
 It should look like:
 
 go run . [path to file containing network map] [start station] [end station] [number of trains]. Example:
+
+
      ##   go run . network.map waterloo st_pancras 4   ##
 
 optional flag -a before other arguments to use distance-based pathfinding. Example:
+     
+     
      ##   go run . network.map waterloo st_pancras 4 | wc -l   ##
 
                         ##How It Works##
