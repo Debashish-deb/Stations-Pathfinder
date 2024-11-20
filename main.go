@@ -26,6 +26,10 @@ func main() {
 	if len(args) == 6 {
 		argShift = 1
 	}
+	if len(args) > 6 {
+		fmt.Println("Error: Too many arguments provided")
+		os.Exit(1)
+	}
 	networkMap, startName, endName, trainsToRun := args[1+argShift], args[2+argShift], args[3+argShift], args[4+argShift]
 	numTrains, err := strconv.Atoi(trainsToRun)
 	if numTrains <= 0 || err != nil {
