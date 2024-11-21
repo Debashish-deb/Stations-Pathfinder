@@ -39,47 +39,55 @@ func FindPaths(start, end *network.Station, railMap network.RailLineMap, aStar b
 	var paths [][]network.Station
 	var uniquePaths int
 	var short bool
-	counter := 0
-	//netTrains := numTrains
 
-	path := FindShortestPath(start, end, railMap, aStar, false, single)
-	if path == nil {
-		if single != nil {
-			return nil, 1
+	if numTrains == 1 {
+		path := FindShortestPath(start, end, railMap, aStar, false, single)
+		if path != nil {
+			paths = append(paths, path)
+			uniquePaths = 1
+			return paths, uniquePaths // Return immediately after finding the first path
 		}
-		fmt.Println("Error: no path found")
-		os.Exit(1)
-	}
-	numTrains--
-	paths = append(paths, path)
-	if len(path) == 2 {
-		short = true
-	}
-	for {
-		path := FindShortestPath(start, end, railMap, aStar, short, single)
-		if len(path)-len(paths[0]) < numTrains {
-			if len(path) != 0 {
-				paths = append(paths, path)
-				uniquePaths = len(paths)
-			} else if len(paths[counter])-len(paths[0]) < numTrains {
-				paths = append(paths, paths[counter])
-				counter++
-				if counter == uniquePaths {
+	} else {
+		counter := 0
+		//netTrains := numTrains
+		path := FindShortestPath(start, end, railMap, aStar, false, single)
+		if path == nil {
+			if single != nil {
+				return nil, 1
+			}
+			fmt.Println("Error: no path found")
+			os.Exit(1)
+		}
+		numTrains--
+		paths = append(paths, path)
+		if len(path) == 2 {
+			short = true
+		}
+		for {
+			path := FindShortestPath(start, end, railMap, aStar, short, single)
+			if len(path)-len(paths[0]) < numTrains {
+				if len(path) != 0 {
+					paths = append(paths, path)
+					uniquePaths = len(paths)
+				} else if len(paths[counter])-len(paths[0]) < numTrains {
+					paths = append(paths, paths[counter])
+					counter++
+					if counter == uniquePaths {
+						counter = 0
+					}
+				} else {
+					paths = append(paths, paths[0])
 					counter = 0
 				}
+				numTrains--
+				if numTrains <= 0 {
+					break
+				}
 			} else {
-				paths = append(paths, paths[0])
-				counter = 0
-			}
-			numTrains--
-			if numTrains <= 0 {
 				break
 			}
-		} else {
-			break
 		}
 	}
-
 	return paths, uniquePaths
 }
 
