@@ -6,40 +6,47 @@ import (
 	"stations-pathfinder/network"
 )
 
+// PriorityQueue is a simple implementation of a priority queue to manage stations during pathfinding.
 type PriorityQueue struct {
 	items []*Item
 }
 
+// Item represents a station with a priority, used in the PriorityQueue for pathfinding.
 type Item struct {
 	Value    *network.Station
 	Priority int
 }
 
+// Push inserts a new item into the priority queue, keeping it sorted by priority.
 func (pq *PriorityQueue) Push(item *Item) {
 	index := 0
+	// Find the correct position for the new item based on its priority
 	for ; index < len(pq.items) && pq.items[index].Priority <= item.Priority; index++ {
 	}
+	// Insert the item at the found position
 	pq.items = append(pq.items[:index], append([]*Item{item}, pq.items[index:]...)...)
 }
 
+// Pop removes and returns the item with the highest priority (lowest value).
 func (pq *PriorityQueue) Pop() *Item {
 	if len(pq.items) == 0 {
-		return nil
+		return nil // the queue is empty
 	}
 	item := pq.items[0]
 	pq.items = pq.items[1:]
 	return item
 }
 
+// Len returns the number of items in the priority queue
 func (pq *PriorityQueue) Len() int {
 	return len(pq.items)
 }
 
+// FindPaths finds paths for multiple trains between the start and end stations
 func FindPaths(start, end *network.Station, railMap network.RailLineMap, aStar bool, numTrains int, single []network.Station) ([][]network.Station, int) {
 	var paths [][]network.Station
 	var uniquePaths int
 	var short bool
-
 	if numTrains == 1 {
 		path := FindShortestPath(start, end, railMap, aStar, false, single)
 		if path != nil {
@@ -49,28 +56,52 @@ func FindPaths(start, end *network.Station, railMap network.RailLineMap, aStar b
 		}
 	} else {
 		counter := 0
-		//netTrains := numTrains
+		netTrains := numTrains
+
+		// Check for duplicate station coordinates
+		stationCoords := make(map[string]bool)
+		for _, station := range railMap.Stations {
+			coord := fmt.Sprintf("%d,%d", station.X, station.Y)
+			if stationCoords[coord] {
+				fmt.Fprintln(os.Stderr, "Error: duplicate station coordinates")
+				os.Exit(1)
+			}
+			stationCoords[coord] = true
+		}
+
+		// Check for duplicate station names
+		stationNames := make(map[string]bool)
+		for _, station := range railMap.Stations {
+			if stationNames[station.Name] {
+				fmt.Fprintln(os.Stderr, "Error: duplicate station name found:", station.Name)
+				os.Exit(1)
+			}
+			stationNames[station.Name] = true
+		}
+		// Find the initial path for the first train
 		path := FindShortestPath(start, end, railMap, aStar, false, single)
 		if path == nil {
 			if single != nil {
 				return nil, 1
 			}
-			fmt.Println("Error: no path found")
+			fmt.Fprintln(os.Stderr, "Error: no path found")
 			os.Exit(1)
 		}
 		numTrains--
 		paths = append(paths, path)
 		if len(path) == 2 {
-			short = true
+			short = true // Marks a path directly from start to end for later pathfinding.
 		}
+
 		for {
 			path := FindShortestPath(start, end, railMap, aStar, short, single)
+			// Dispatch efficiency logic:
 			if len(path)-len(paths[0]) < numTrains {
 				if len(path) != 0 {
 					paths = append(paths, path)
 					uniquePaths = len(paths)
 				} else if len(paths[counter])-len(paths[0]) < numTrains {
-					paths = append(paths, paths[counter])
+					paths = append(paths, paths[counter]) // Once all the new paths are found all the other trains will be assigned the already existing paths, from most efficient to least.
 					counter++
 					if counter == uniquePaths {
 						counter = 0
@@ -87,8 +118,21 @@ func FindPaths(start, end *network.Station, railMap network.RailLineMap, aStar b
 				break
 			}
 		}
+
+		if uniquePaths == 0 {
+			// Check for more optimal multi-pathing options.
+			clearStations(railMap)
+			multiPaths, uniquePaths := FindPaths(start, end, railMap, aStar, netTrains, paths[0])
+			if uniquePaths == 1 {
+				return paths, uniquePaths
+			}
+			if RunSchedule(multiPaths, uniquePaths, true) < (len(paths[0]) + netTrains - 1) {
+				return multiPaths, uniquePaths
+			}
+			uniquePaths = 1
+		}
 	}
-	return paths, uniquePaths
+	return paths, uniquePaths // Returns a path for every train and the amount of paths that can be started per turn.
 }
 
 // findShortestPath computes the shortest path between two stations using A* or basic pathfinding.
@@ -177,4 +221,11 @@ func abs(x int) int {
 		return -x
 	}
 	return x
+}
+
+// clearStations resets the occupied status of stations.
+func clearStations(railMap network.RailLineMap) {
+	for _, station := range railMap.Stations {
+		station.Occupied = false
+	}
 }

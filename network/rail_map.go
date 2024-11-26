@@ -31,9 +31,12 @@ func BuildStations(filePath string) ([]Station, RailLineMap) {
 		Connections: make(map[*Station][]*Station),
 	}
 
+	// Create a map to track connections
+	connectionMap := make(map[string]bool)
+
 	file, err := os.Open(filePath)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 	defer file.Close()
@@ -59,7 +62,7 @@ func BuildStations(filePath string) ([]Station, RailLineMap) {
 			stations = append(stations, station)
 			railMap.Stations = append(railMap.Stations, &stations[len(stations)-1])
 		} else if connectionsSection {
-			railMap = addConnection(line, stations, railMap)
+			railMap = addConnection(line, stations, railMap, connectionMap)
 		}
 	}
 	return stations, railMap
@@ -72,13 +75,30 @@ func defineStation(line string) Station {
 	return Station{Name: parts[0], X: x, Y: y, Distance: 1 << 20}
 }
 
-func addConnection(line string, stations []Station, railMap RailLineMap) RailLineMap {
+func addConnection(line string, stations []Station, railMap RailLineMap, connectionMap map[string]bool) RailLineMap {
 	stops := strings.Split(line, "-")
 	stop1, stop2 := StationLookup(stops[0], stations), StationLookup(stops[1], stations)
+
 	if stop1 == nil || stop2 == nil {
-		fmt.Println("Error: invalid connection:", line)
+		fmt.Fprintln(os.Stderr, "Error: invalid connection:", line)
 		os.Exit(1)
 	}
+
+	// Create connection keys for both directions
+	connection1 := fmt.Sprintf("%s-%s", stops[0], stops[1])
+	connection2 := fmt.Sprintf("%s-%s", stops[1], stops[0])
+
+	// Check if either direction of the connection already exists
+	if connectionMap[connection1] || connectionMap[connection2] {
+		fmt.Fprintln(os.Stderr, "Error: duplicate connection found:", line)
+		os.Exit(1)
+	}
+
+	// Store both directions in the connection map
+	connectionMap[connection1] = true
+	connectionMap[connection2] = true
+
+	// Add the connections to the railMap
 	railMap.Connections[stop1] = append(railMap.Connections[stop1], stop2)
 	railMap.Connections[stop2] = append(railMap.Connections[stop2], stop1)
 	return railMap
